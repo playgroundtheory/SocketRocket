@@ -713,6 +713,7 @@ static __strong NSData *CRLFCRLF;
 
             self.readyState = SR_CLOSED;
             _selfRetain = nil;
+            [self release];
 
             SRFastLog(@"Failing with error %@", error.localizedDescription);
             
@@ -1096,6 +1097,7 @@ static const uint8_t SRPayloadLenMask   = 0x7F;
         _outputBufferOffset += bytesWritten;
         
         if (_outputBufferOffset > 4096 && _outputBufferOffset > (_outputBuffer.length >> 1)) {
+            [_outputBuffer release];
             _outputBuffer = [[NSMutableData alloc] initWithBytes:(char *)_outputBuffer.bytes + _outputBufferOffset length:_outputBuffer.length - _outputBufferOffset];
             _outputBufferOffset = 0;
         }
@@ -1125,6 +1127,7 @@ static const uint8_t SRPayloadLenMask   = 0x7F;
         }
         
         _selfRetain = nil;
+        [self release];
     }
 }
 
