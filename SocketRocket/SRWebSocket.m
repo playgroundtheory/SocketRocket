@@ -303,8 +303,8 @@ static __strong NSData *CRLFCRLF;
     self = [super init];
     if (self) {
         assert(request.URL);
-        _url = request.URL;
-        _urlRequest = request;
+        _url = [request.URL retain];
+        _urlRequest = [request retain];
         
         _requestedProtocols = [protocols copy];
         
@@ -375,6 +375,11 @@ static __strong NSData *CRLFCRLF;
 
 - (void)dealloc
 {
+    [_url release];
+    [_urlRequest release];
+
+    [_requestedProtocols release];
+
     _inputStream.delegate = nil;
     _outputStream.delegate = nil;
 
@@ -393,6 +398,16 @@ static __strong NSData *CRLFCRLF;
         sr_dispatch_release(_delegateDispatchQueue);
         _delegateDispatchQueue = NULL;
     }
+
+    [_readBuffer release];
+    [_outputBuffer release];
+
+    [_currentFrameData release];
+
+    [_consumers release];
+
+    [_consumerPool release];
+    [_scheduledRunloops release];
 
     [super dealloc];
 }
@@ -415,6 +430,7 @@ static __strong NSData *CRLFCRLF;
     NSAssert(_readyState == SR_CONNECTING, @"Cannot call -(void)open on SRWebSocket more than once");
 
     _selfRetain = self;
+    [self retain];
     
     [self _connect];
 }
@@ -1211,6 +1227,7 @@ static const char CRLFCRLFBytes[] = {'\r', '\n', '\r', '\n'};
         _readBufferOffset += foundSize;
         
         if (_readBufferOffset > 4096 && _readBufferOffset > (_readBuffer.length >> 1)) {
+            [_readBuffer release];
             _readBuffer = [[NSMutableData alloc] initWithBytes:(char *)_readBuffer.bytes + _readBufferOffset length:_readBuffer.length - _readBufferOffset];            _readBufferOffset = 0;
         }
         
@@ -1510,6 +1527,14 @@ static const size_t SRFrameHeaderOverhead = 32;
     _readToCurrentFrame = readToCurrentFrame;
     _unmaskBytes = unmaskBytes;
     assert(_scanner || _bytesNeeded);
+}
+
+- (void)dealloc
+{
+    [_scanner release];
+    [_handler release];
+
+    [super dealloc];
 }
 
 
