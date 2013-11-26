@@ -409,6 +409,9 @@ static __strong NSData *CRLFCRLF;
     [_consumerPool release];
     [_scheduledRunloops release];
 
+    [_secKey release];
+    [_closeReason release];
+
     [super dealloc];
 }
 
@@ -542,7 +545,7 @@ static __strong NSData *CRLFCRLF;
         
     NSMutableData *keyBytes = [NSMutableData dataWithLength:16];
     SecRandomCopyBytes(kSecRandomDefault, keyBytes.length, keyBytes.mutableBytes);
-    _secKey = [keyBytes SR_stringByBase64Encoding];
+    _secKey = [[keyBytes SR_stringByBase64Encoding] retain];
     assert([_secKey length] == 24);
     
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Upgrade"), CFSTR("websocket"));
@@ -1460,6 +1463,7 @@ static const size_t SRFrameHeaderOverhead = 32;
                     if (self.readyState != SR_CLOSED) {
                         self.readyState = SR_CLOSED;
                         _selfRetain = nil;
+                        [_selfRetain release];
                     }
 
                     if (!_sentClose && !_failed) {
